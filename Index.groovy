@@ -58,6 +58,18 @@ public class Index implements PageController {
 
     Logger logger= Logger.getLogger("org.bonitasoft");
 
+
+    String[]  listAttributs = [
+        "sql",
+        "datasource",
+        "expl",
+        "profilename",
+        "testparameters",
+        "delayms",
+        "simulationmode",
+        "simulationresult",
+        "simulationdelayms"
+    ];
     @Override
     public void doGet(HttpServletRequest request, HttpServletResponse response, PageResourceProvider pageResourceProvider, PageContext pageContext) {
 
@@ -130,25 +142,31 @@ public class Index implements PageController {
                                 setqueriesid.remove(oldId );
 
                                 logger.info("new listQueriesId["+setqueriesid+"]");
-                                bonitaProperties.remove( oldId+"_sql");
-                                bonitaProperties.remove( oldId+"_datasource");
-                                bonitaProperties.remove( oldId+"_expl" );
-                                bonitaProperties.remove( oldId+"_profilename" );
-                                bonitaProperties.remove( oldId+"_testparameters" );
-                                bonitaProperties.remove( oldId+"_delayms" );
-
+                                for (String attr : listAttributs)
+                                {
+                                    bonitaProperties.remove( oldId+"_"+attr);
+                                }
                             }
                             setqueriesid.add( id );
 
                             logger.info("new listqueriesid["+setqueriesid+"]");
 
-                            bonitaProperties.setProperty( id+"_sql", (jsonHash.get("sql")==null ? "" :  jsonHash.get("sql")));
-                            bonitaProperties.setProperty( id+"_datasource", (jsonHash.get("datasource")==null ? "" :  jsonHash.get("datasource")) );
-                            bonitaProperties.setProperty( id+"_expl" , ( jsonHash.get("expl") == null ? "" :  jsonHash.get("expl")));
-                            bonitaProperties.setProperty( id+"_profilename" , ( jsonHash.get("profilename") == null ? "" :  jsonHash.get("profilename")));
-                            bonitaProperties.setProperty( id+"_testparameters" , ( jsonHash.get("testparameters") == null ? "" :  jsonHash.get("testparameters")));
-                            bonitaProperties.setProperty( id+"_delayms" , ( jsonHash.get("delayms") == null ? "" :  jsonHash.get("delayms")));
-
+                            for (String attr : listAttributs)
+                            {
+                                logger.info("Save attr["+attr+"] value=["+ jsonHash.get(attr)+"]");
+                                
+                                bonitaProperties.setProperty( id+"_"+attr, (jsonHash.get(attr)==null ? "" :  jsonHash.get(attr)));
+                                /*
+                                 bonitaProperties.setProperty( id+"_datasource", (jsonHash.get("datasource")==null ? "" :  jsonHash.get("datasource")) );
+                                 bonitaProperties.setProperty( id+"_expl" , ( jsonHash.get("expl") == null ? "" :  jsonHash.get("expl")));
+                                 bonitaProperties.setProperty( id+"_profilename" , ( jsonHash.get("profilename") == null ? "" :  jsonHash.get("profilename")));
+                                 bonitaProperties.setProperty( id+"_testparameters" , ( jsonHash.get("testparameters") == null ? "" :  jsonHash.get("testparameters")));
+                                 bonitaProperties.setProperty( id+"_delayms" , ( jsonHash.get("delayms") == null ? "" :  jsonHash.get("delayms")));
+                                 bonitaProperties.setProperty( id+"_simulationmode",( jsonHash.get("simulationmode") == null ? "" :  jsonHash.get("simulationmode"))); );
+                                 bonitaProperties.setProperty( id+"_simulationresult",( jsonHash.get("simulationresult") == null ? "" :  jsonHash.get("simulationresult"))); );
+                                 bonitaProperties.setProperty( id+"_simulationdelayms",( jsonHash.get("simulationdelayms") == null ? "" :  jsonHash.get("simulationdelayms"))); );
+                                 */
+                            }
                             bonitaProperties.setProperty( "listqueries", codeListQueries( setqueriesid ));
 
                             listEvents.addAll(  bonitaProperties.store());
@@ -157,9 +175,9 @@ public class Index implements PageController {
                             {
                                 listEvents.add( new BEvent("com.bonitasoft.gasoline", 1, Level.SUCCESS, "Queries saved", "the properties is saved with success"));
                                 answer.put("id",id );
-                                
+
                             }
-                                
+
                         }
                     }
                     catch( Exception e ) {
@@ -215,12 +233,18 @@ public class Index implements PageController {
                         setqueriesid.remove(id );
 
                         logger.info("new listQueriesId["+setqueriesid+"]");
-                        bonitaProperties.remove( id+"_sql");
-                        bonitaProperties.remove( id+"_datasource");
-                        bonitaProperties.remove( id+"_expl" );
-                        bonitaProperties.remove( id+"_profilename" );
-                        bonitaProperties.remove( id+"_testparameters" );
-                        bonitaProperties.remove( id+"_delayms" );
+                        for (String attr : listAttributs)
+                        {
+                            bonitaProperties.remove( id+"_"+attr);
+                        }
+                        /*
+                         bonitaProperties.remove( id+"_sql");
+                         bonitaProperties.remove( id+"_datasource");
+                         bonitaProperties.remove( id+"_expl" );
+                         bonitaProperties.remove( id+"_profilename" );
+                         bonitaProperties.remove( id+"_testparameters" );
+                         bonitaProperties.remove( id+"_delayms" );
+                         */
                         bonitaProperties.setProperty( "listqueries", codeListQueries( setqueriesid ));
 
 
@@ -246,21 +270,26 @@ public class Index implements PageController {
                 // execute a query ?
                 answer = new HashMap<String,Object>();
 
-
+                if (queryId == null)
+                    queryId= jsonHash.get("id");
+                
                 // Get the query SQL definition from the queries.properties file using query id.
                 BonitaProperties bonitaProperties = new BonitaProperties( pageResourceProvider );
                 listEvents.addAll( bonitaProperties.load() );
-                String querySql = bonitaProperties.getProperty( queryId+"_sql" );
-                String datasource = bonitaProperties.getProperty( queryId+"_datasource" );
+                String querySql                = bonitaProperties.getProperty( queryId + "_sql" );
+                String datasource            = bonitaProperties.getProperty( queryId + "_datasource" );
+                String simulationMode   = bonitaProperties.getProperty( queryId + "_simulationmode" );
+                String simulationResult   = bonitaProperties.getProperty( queryId + "_simulationresult" );
                 
+
                 if ( "testquery".equals(action))
                 {
                     querySql = (jsonHash.get("sql")==null ? "" :  jsonHash.get("sql"));
                     datasource = (jsonHash.get("datasource")==null ? "" :  jsonHash.get("datasource"));
                 }
-                
-                
-                
+
+
+
                 Long delayms=null;
                 try {
                     delayms= Long.valueOf( bonitaProperties.getProperty( queryId+"_delayms" ));
@@ -297,6 +326,8 @@ public class Index implements PageController {
                         logger.info("He has the profile ["+profilename+"]");
                 }
 
+
+
                 if (queryId==null && querySql == null) {
                     answer.put("status", "No queryid.");
                     listEvents.add( new BEvent("com.bonitasoft.gasolinetruck", 20, Level.APPLICATIONERROR, "No queryId given as parameters","The queryid is mandatory","query can't run","Set a queryId"));
@@ -311,64 +342,118 @@ public class Index implements PageController {
                 {
                     // Build a map will all SQL queries parameters (all REST call parameters expect "queryId").
                     Map<String, String> params = getSqlParametersFromUrl( request )
-                    logger.info("Run SqlQuery["+querySql+"] in  datasource["+datasource +"] params["+params+"]");
+                    logger.info("Run queryId["+queryId+"]  SqlQuery["+querySql+"] in  datasource["+datasource +"] params["+params+"] simulationMode ["+simulationMode+"]");
+                    String message="";
 
-                    // Get the database connection using the data source declared in datasource.properties
-                    Sql sql = buildSql(  datasource );
-                    String sqlRequest = params.isEmpty() ? querySql : querySql+" [Param "+params+"]";
-                    try {
-                        logger.info("play rows" );
-                        long beginTime = System.currentTimeMillis();
-                        // Run the query with or without parameters.
-                        List rows = params.isEmpty() ? sql.rows(querySql) : sql.rows(querySql, params)
-                        if (delayms != null)
-                        {
-                            logger.info("Delay asked, sleep "+delayms+" ms")
-                            Thread.sleep( delayms );
-                        };
-                        long endTime = System.currentTimeMillis();
-
-
-                        logger.info("sql["+sqlRequest+"] executed in ["+ (endTime-beginTime)+"] ms action[" + action+"]" );
-
-                        // Build the JSON answer with the query result
-                        if ( "testquery".equals(action))
-                        {
-                            answer.put("rows",rows);
-                            answer.put("stats", (endTime-beginTime));
-                        }
-                        else
-                        {
-                            answerrows = rows;
-
-                        }
-
-                        // JsonBuilder builder = new JsonBuilder(rows)
-                        // String table = builder.toPrettyString()
-                        // return buildResponse(responseBuilder, table)
-                    } catch (Exception e)
+                    boolean doSimulation="always".equals(simulationMode)
+                    List rows=null;
+                    long beginTime = System.currentTimeMillis();
+                    String sqlRequest=null;
+                    if ( ! doSimulation)
                     {
-                        StringWriter sw = new StringWriter();
-                        e.printStackTrace(new PrintWriter(sw));
-                        String exceptionDetails = sw.toString();
-                        logger.severe("LoadQuery:Exception "+e.toString()+" at "+exceptionDetails);
+                        // run the sql
+                        // Get the database connection using the data source declared in datasource.properties
+                        Sql sql = buildSql(  datasource );
+                        sqlRequest = params.isEmpty() ? querySql : querySql+" [Param "+params+"]";
+                        try {
+                            logger.info("play rows" );
+                            // Run the query with or without parameters.
+                            rows = params.isEmpty() ? sql.rows(querySql) : sql.rows(querySql, params)
+                            if (delayms != null)
+                            {
+                                logger.info("Delay asked, sleep "+delayms+" ms")
+                                Thread.sleep( delayms );
+                            };
+                   
 
-                        answer = new HashMap<String,Object>();
-                        listEvents.add( new BEvent("com.bonitasoft.gasolinetruck", 22, Level.APPLICATIONERROR, "SQLError "+e.getMessage(), "SqlQuery["+sqlRequest+"] can't give a result", "Check the query"));
+                             
 
+                            // JsonBuilder builder = new JsonBuilder(rows)
+                            // String table = builder.toPrettyString()
+                            // return buildResponse(responseBuilder, table)
+                        } catch (Exception e)
+                        {
+                            StringWriter sw = new StringWriter();
+                            e.printStackTrace(new PrintWriter(sw));
+                            String exceptionDetails = sw.toString();
+                            logger.severe("LoadQuery:Exception "+e.toString()+" at "+exceptionDetails);
+                            doSimulation="onerror".equals(simulationMode);
 
-                    } finally {
-                        sql.close()
+                            if (!doSimulation)
+                            {
+                                answer = new HashMap<String,Object>();
+                                listEvents.add( new BEvent("com.bonitasoft.gasolinetruck", 22, Level.APPLICATIONERROR, "SQLError "+e.getMessage(), "SqlQuery["+sqlRequest+"] can't give a result", "Check the query"));
+                            }
+
+                        } finally {
+                            sql.close()
+                        }
+                    } // end run sql
+                    if (doSimulation)
+                    {
+                        logger.info("LoadQuery: do simulation !");
+                        Long delaySimulationms=null;
+                        try {
+                            delaySimulationms= Long.valueOf( bonitaProperties.getProperty( queryId+"_simulationdelayms" ));
+                            Thread.sleep( delaySimulationms );
+                        } catch(Exception e )
+                        {
+                            logger.info("simulationdelayms : "+e.toString());
+                        };
+                        String  result=  bonitaProperties.getProperty( queryId+"_simulationresult" );
+                        logger.info("result["+result+"]");
+                        try
+                        {
+                            if (result != null && result.length() > 0 ) {
+                                logger.info("Parse ");                                
+                                rows =  (List<String, Object>) JSONValue.parse( result );
+                                logger.info("Parse result : row=["+rows+"]");
+                                if (rows==null)
+                                    message="Parsing error on simulation Result;";
+                            }
+                        }
+                        catch(Exception e) {
+                            logger.severe("Error on result ["+e+"]");
+                            message+="Error on Parsing :"+e.toString()+";";
+                            
+                            listEvents.add( new BEvent("com.bonitasoft.gasolinetruck", 23, Level.APPLICATIONERROR, "Simulation error "+e.getMessage(), "Result sould be a JSON Array", "Check the simulation"));
+
+                        }
+
                     }
-                }
+                    long endTime = System.currentTimeMillis();
+                    logger.info(" doSimulation ? "+doSimulation+"] sql["+sqlRequest+"] executed in ["+ (endTime-beginTime)+"] ms action[" + action+"] message["+message+"]" );
+                    
+                    logger.info("return >>> rows["+rows+"] message");
+                    if (message.length()>0)
+                        listEvents.add( new BEvent("com.bonitasoft.gasolinetruck", 24, Level.APPLICATIONERROR, "Error "+message, "An error occure", "Check the message"));
+                    
+                    // Build the JSON answer with the query result
+                    if ( "testquery".equals(action))
+                    {
+                        answer.put("rows",rows);
+                        answer.put("stats", (endTime-beginTime));
+
+
+                    }
+                    else
+                    {
+                        answerrows = rows;
+                    }
+                    
+                    
+                } // end continue operation
+
             } // end execute a query
 
             // return the result now
             if (answerrows != null)
             {
+                
                 JsonBuilder builder = new JsonBuilder(answerrows);
                 String table = builder.toPrettyString();
-
+                logger.info("return answerrows:["+table+"]");
+                
                 out.write( table );
                 out.flush();
                 out.close();
@@ -379,7 +464,8 @@ public class Index implements PageController {
                 answer.put("listevents", BEventFactory.getHtml(listEvents) );
 
                 String jsonDetailsSt = JSONValue.toJSONString( answer );
-
+                logger.info("return Json:["+jsonDetailsSt+"]");
+                
                 out.write( jsonDetailsSt );
                 out.flush();
                 out.close();
@@ -441,6 +527,11 @@ public class Index implements PageController {
             Map<String,Object> oneQuery = new HashMap<String,Object>();
             oneQuery.put("id", id );
             oneQuery.put("oldId", id );
+            for (String attr : listAttributs)
+            {
+                oneQuery.put( attr, , bonitaProperties.getProperty( id+"_"+attr ));
+            }
+            /*
             oneQuery.put("sql", bonitaProperties.getProperty( id+"_sql" ));
             oneQuery.put("datasource", bonitaProperties.getProperty( id+"_datasource" ));
             oneQuery.put("expl", bonitaProperties.getProperty( id+"_expl" ));
@@ -448,6 +539,7 @@ public class Index implements PageController {
             oneQuery.put("testparameters", bonitaProperties.getProperty( id+"_testparameters" ));
             oneQuery.put("delayms", bonitaProperties.getProperty( id+"_delayms" ));
             oneQuery.put("profile", bonitaProperties.getProperty( id+"_profile" ));
+            */
             listQueries.add (oneQuery );
         }
         return;

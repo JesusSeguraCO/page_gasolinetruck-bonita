@@ -75,12 +75,13 @@ appCommand.controller('GasolineControler',
 				})
 				.error( function() {
 					self.loading=false;
-					alert('an error occure');
+					alert('an error occure on load');
 					});
 	}
 	this.loadQueries();
 
-	this.currentquery ={ 'id':'',  'sql':'',    'datasource':'java:comp/env/', 'expl' :'', 'testparameters':''};
+	this.currentquery ={ 'id':'',  'sql':'',    'datasource':'java:comp/env/', 'expl' :'', 'testparameters':'', 'simulationmode':'never'};
+
 	
 	/**
 	 * Save the query
@@ -99,7 +100,7 @@ appCommand.controller('GasolineControler',
 
 				})
 				.error( function() {
-					alert('an error occure');
+					alert('an error occure on save');
 					});
 	}
 	
@@ -119,7 +120,7 @@ appCommand.controller('GasolineControler',
 						self.closeDialog();
 				})
 				.error( function() {
-					alert('an error occure');
+					alert('an error occure on remove');
 					});
 	}
 	
