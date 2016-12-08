@@ -36,7 +36,7 @@ import org.bonitasoft.console.common.server.page.PageController
 import org.bonitasoft.console.common.server.page.PageResourceProvider
 import org.bonitasoft.engine.exception.UnknownAPITypeException;
 
-import com.bonitasoft.engine.api.TenantAPIAccessor;
+import org.bonitasoft.engine.api.TenantAPIAccessor;
 import org.bonitasoft.engine.session.APISession;
 import org.bonitasoft.engine.api.CommandAPI;
 import org.bonitasoft.engine.api.ProcessAPI;
@@ -131,7 +131,7 @@ public class Index implements PageController {
                         if (setqueriesid.contains(id) && (oldId==null || ! oldId.equals( id ) ))
                         {
                             // the new ID already exist
-                            listEvents.add( new BEvent("com.bonitasoft.gasoline", 4, Level.APPLICATIONERROR, "ID already exist", "This ID already exist, and you can't have 2 requests with the same ID", "The query is not saved", "Change and choose an new id"));
+                            listEvents.add( new BEvent("org.bonitasoft.gasoline", 4, Level.APPLICATIONERROR, "ID already exist", "This ID already exist, and you can't have 2 requests with the same ID", "The query is not saved", "Change and choose an new id"));
                         }
                         else
                         {
@@ -173,7 +173,7 @@ public class Index implements PageController {
 
                             if (! BEventFactory.isError( listEvents ))
                             {
-                                listEvents.add( new BEvent("com.bonitasoft.gasoline", 1, Level.SUCCESS, "Queries saved", "the properties is saved with success"));
+                                listEvents.add( new BEvent("org.bonitasoft.gasoline", 1, Level.SUCCESS, "Queries saved", "the properties is saved with success"));
                                 answer.put("id",id );
 
                             }
@@ -186,7 +186,7 @@ public class Index implements PageController {
                         String exceptionDetails = sw.toString();
                         logger.severe("SaveQuery:Exception "+e.toString()+" at "+exceptionDetails);
 
-                        listEvents.add( new BEvent("com.bonitasoft.ping", 2, Level.APPLICATIONERROR, "Error using BonitaProperties", "Error :"+e.toString(), "Properties is not saved", "Check exception"));
+                        listEvents.add( new BEvent("org.bonitasoft.ping", 2, Level.APPLICATIONERROR, "Error using BonitaProperties", "Error :"+e.toString(), "Properties is not saved", "Check exception"));
                     }
 
                     List<Map<String,String>> listQueries = new ArrayList<Map<String,String>>();
@@ -194,7 +194,7 @@ public class Index implements PageController {
                     answer.put("listqueries",listQueries );
                 }
                 else
-                    listEvents.add( new BEvent("com.bonitasoft.ping", 3, Level.APPLICATIONERROR, "JsonHash can't be decode", "the parameters in Json can't be decode", "Properties is not saved", "Check page"));
+                    listEvents.add( new BEvent("org.bonitasoft.ping", 3, Level.APPLICATIONERROR, "JsonHash can't be decode", "the parameters in Json can't be decode", "Properties is not saved", "Check page"));
             }
             else  if ("loadqueries".equals(action)) {
                 answer = new HashMap<String,Object>();
@@ -210,7 +210,7 @@ public class Index implements PageController {
                     String exceptionDetails = sw.toString();
                     logger.severe("LoadQuery:Exception "+e.toString()+" at "+exceptionDetails);
 
-                    listEvents.add( new BEvent("com.bonitasoft.gasolinetruck", 10, Level.APPLICATIONERROR, "Error loading queries", "Error :"+e.toString(), "Properties is not saved", "Check exception"));
+                    listEvents.add( new BEvent("org.bonitasoft.gasolinetruck", 10, Level.APPLICATIONERROR, "Error loading queries", "Error :"+e.toString(), "Properties is not saved", "Check exception"));
                 }
             }
             else if ("removequery".equals(action))
@@ -259,7 +259,7 @@ public class Index implements PageController {
                     String exceptionDetails = sw.toString();
                     logger.severe("LoadQuery:Exception "+e.toString()+" at "+exceptionDetails);
 
-                    listEvents.add( new BEvent("com.bonitasoft.gasolinetruck", 10, Level.APPLICATIONERROR, "Error loading queries", "Error :"+e.toString(), "Properties is not saved", "Check exception"));
+                    listEvents.add( new BEvent("org.bonitasoft.gasolinetruck", 10, Level.APPLICATIONERROR, "Error loading queries", "Error :"+e.toString(), "Properties is not saved", "Check exception"));
                 }
                 List<Map<String,String>> listQueries = new ArrayList<Map<String,String>>();
                 loadQueries(  pageResourceProvider, listQueries,  listEvents);
@@ -314,7 +314,7 @@ public class Index implements PageController {
                     if (!permission)
                     {
                         logger.info("The user ["+session.getUserId()+"] does not have the profilename["+profilename+"]");
-                        listEvents.add( new BEvent("com.bonitasoft.gasolinetruck", 22, Level.APPLICATIONERROR, "User is not registerd in the profile", "This query is protected by a profile name, and the user is not registered inside", "Query is rejected", "Register the user in the profile (profile name is not given for security reason)"));
+                        listEvents.add( new BEvent("org.bonitasoft.gasolinetruck", 22, Level.APPLICATIONERROR, "User is not registerd in the profile", "This query is protected by a profile name, and the user is not registered inside", "Query is rejected", "Register the user in the profile (profile name is not given for security reason)"));
                         if ( ! "testquery".equals(action))
                         {
                             response.setStatus( 403 );
@@ -330,12 +330,12 @@ public class Index implements PageController {
 
                 if (queryId==null && querySql == null) {
                     answer.put("status", "No queryid.");
-                    listEvents.add( new BEvent("com.bonitasoft.gasolinetruck", 20, Level.APPLICATIONERROR, "No queryId given as parameters","The queryid is mandatory","query can't run","Set a queryId"));
+                    listEvents.add( new BEvent("org.bonitasoft.gasolinetruck", 20, Level.APPLICATIONERROR, "No queryId given as parameters","The queryid is mandatory","query can't run","Set a queryId"));
                     continueoperation=false;
                 }
                 else if (querySql == null) {
                     answer.put("status", "The queryId does not refer to an existing query. Check your query id and queries.properties file content.");
-                    listEvents.add( new BEvent("com.bonitasoft.gasolinetruck", 21, Level.APPLICATIONERROR, "queryId ["+queryId+"] does not refer to an existing query", "No query runs", "look the list of existing query"));
+                    listEvents.add( new BEvent("org.bonitasoft.gasolinetruck", 21, Level.APPLICATIONERROR, "queryId ["+queryId+"] does not refer to an existing query", "No query runs", "look the list of existing query"));
                     continueoperation=false;
                 }
                 if ( continueoperation )
@@ -382,7 +382,7 @@ public class Index implements PageController {
                             if (!doSimulation)
                             {
                                 answer = new HashMap<String,Object>();
-                                listEvents.add( new BEvent("com.bonitasoft.gasolinetruck", 22, Level.APPLICATIONERROR, "SQLError "+e.getMessage(), "SqlQuery["+sqlRequest+"] can't give a result", "Check the query"));
+                                listEvents.add( new BEvent("org.bonitasoft.gasolinetruck", 22, Level.APPLICATIONERROR, "SQLError "+e.getMessage(), "SqlQuery["+sqlRequest+"] can't give a result", "Check the query"));
                             }
 
                         } finally {
@@ -416,7 +416,7 @@ public class Index implements PageController {
                             logger.severe("Error on result ["+e+"]");
                             message+="Error on Parsing :"+e.toString()+";";
                             
-                            listEvents.add( new BEvent("com.bonitasoft.gasolinetruck", 23, Level.APPLICATIONERROR, "Simulation error "+e.getMessage(), "Result sould be a JSON Array", "Check the simulation"));
+                            listEvents.add( new BEvent("org.bonitasoft.gasolinetruck", 23, Level.APPLICATIONERROR, "Simulation error "+e.getMessage(), "Result sould be a JSON Array", "Check the simulation"));
 
                         }
 
@@ -426,7 +426,7 @@ public class Index implements PageController {
                     
                     logger.info("return >>> rows["+rows+"] message");
                     if (message.length()>0)
-                        listEvents.add( new BEvent("com.bonitasoft.gasolinetruck", 24, Level.APPLICATIONERROR, "Error "+message, "An error occure", "Check the message"));
+                        listEvents.add( new BEvent("org.bonitasoft.gasolinetruck", 24, Level.APPLICATIONERROR, "Error "+message, "An error occure", "Check the message"));
                     
                     // Build the JSON answer with the query result
                     if ( "testquery".equals(action))
