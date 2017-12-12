@@ -48,10 +48,11 @@ appCommand.controller('GasolineControler',
 	this.listqueries= [];
 	this.newQuery = function()
 	{
-		this.currentquery= {};
+		this.currentquery= { 'id':'New query'};
 		this.listqueries.push(  this.currentquery );
 		this.resulttestquery ={};
 		this.isshowDialog=true;
+		this.openQueryPanel();
 		
 	}
 	
@@ -59,10 +60,13 @@ appCommand.controller('GasolineControler',
 		this.currentquery=queryinfo;
 		this.resulttestquery ={};
 		this.isshowDialog=true;
+		this.openQueryPanel();
 	};
 	
 	this.loading=false;
-
+	this.saving=false;
+	this.executing=false;
+	
 	this.loadQueries =function() {
 		var self=this;
 		self.loading=true;
@@ -75,7 +79,7 @@ appCommand.controller('GasolineControler',
 				})
 				.error( function() {
 					self.loading=false;
-					alert('an error occure on load');
+					// alert('an error occure on load');
 					});
 	}
 	this.loadQueries();
@@ -89,18 +93,20 @@ appCommand.controller('GasolineControler',
 	this.saveQuery = function() {
 		var self=this;
 		self.listeventssave=''; 
-		var json = angular.toJson(this.currentquery, false);
+		self.saving=true;
+		var json= encodeURI( angular.toJson(this.currentquery, false));
 		
-		$http.get( '?page=custompage_gasolinetruck&action=savequery&json='+json )
+		$http.get( '?page=custompage_gasolinetruck&action=savequery&paramjson='+json )
 				.success( function ( jsonResult ) {
 						console.log("history",jsonResult);
 						self.listqueries = jsonResult.listqueries;
 						self.listeventssave		= jsonResult.listevents;
 						self.currentquery.oldId=jsonResult.id;
-
+						self.saving=false;
 				})
 				.error( function() {
-					alert('an error occure on save');
+					// alert('an error occure on save');
+					self.saving=false;
 					});
 	}
 	
@@ -112,15 +118,21 @@ appCommand.controller('GasolineControler',
 		if (! confirm("Would you like to remove this query ?"))
 			return;
 		self.listeventssave=''; 
-		var json = angular.toJson(this.currentquery, false);
+		var json= encodeURI( angular.toJson(this.currentquery, false));
+		self.saving=true;
 		
-		$http.get( '?page=custompage_gasolinetruck&action=removequery&json='+json )
+		
+		$http.get( '?page=custompage_gasolinetruck&action=removequery&paramjson='+json )
 				.success( function ( jsonResult ) {
 						self.listqueries = jsonResult.listqueries;
 						self.closeDialog();
+						self.closeQueryPanel();			
+						self.saving=false;
 				})
 				.error( function() {
-					alert('an error occure on remove');
+					// alert('an error occure on remove');
+					self.saving=false;
+					
 					});
 	}
 	
@@ -134,19 +146,48 @@ appCommand.controller('GasolineControler',
 		self.listeventstest='';
 		self.listeventssave='';
 		self.executing=true;
-		var json = angular.toJson(this.currentquery, false);
+		console.log("angular currentQuery="+angular.toJson(this.currentquery, false));
 		
-		$http.get( '?page=custompage_gasolinetruck&action=testquery&json='+json+'&'+this.currentquery.testparameters )
+		var json= encodeURI( angular.toJson(this.currentquery, false));
+
+		
+		$http.get( '?page=custompage_gasolinetruck&action=testquery&paramjson='+json+'&'+this.testparameters)
 				.success( function ( jsonResult ) {
-						console.log("history",jsonResult);
+						console.log("testquery",jsonResult);
 						self.resulttestquery = jsonResult;
 						self.listeventstest= jsonResult.listevents;
 						self.executing=false;
 				})
 				.error( function() {
 					self.executing=false;
-					alert('an error occure');
+					// alert('an error occure');
 					});
+	}
+	
+	// --------------------------------------------------------------------------
+	//
+	//  Manage the panel
+	//
+	// --------------------------------------------------------------------------
+	this.showQueryPanel=false;
+	this.isshowQueryPanel = function()
+	{
+		return this.showQueryPanel;
+	}
+	this.closeQueryPanel = function()
+	{
+		this.showQueryPanel=false;
+	}
+	this.openQueryPanel = function()
+	{
+		console.log("Open query panel");
+		this.showQueryPanel=true;
+	}
+	this.getListStyle = function()
+	{
+		if (this.showQueryPanel)
+			return "filter:alpha(opacity=50); opacity:0.5;";
+		return "";
 	}
 	// --------------------------------------------------------------------------
 	//
@@ -173,8 +214,12 @@ appCommand.controller('GasolineControler',
 		document.getElementById( this.currenttab ).className ='active';
 	};
 	this.getHeaderResultTest = function() {
-		var firstline =  this.resulttestquery.rows[ 0 ];
-		return firstline;
+		if (this.resulttestquery.rows && this.resulttestquery.rows.length > 0)
+		{
+			var firstline =  this.resulttestquery.rows[ 0 ];
+			return firstline;
+		}
+		return {};
 	}
 
 });
