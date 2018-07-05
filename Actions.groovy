@@ -8,6 +8,7 @@ import java.io.PrintWriter;
 import java.lang.Runtime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.StringTokenizer;
 
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
@@ -45,8 +46,8 @@ import org.bonitasoft.engine.api.ProfileAPI;
 
 import org.bonitasoft.engine.profile.ProfileCriterion;
 import org.bonitasoft.engine.profile.Profile;
-
-
+import org.bonitasoft.engine.search.SearchResult;
+import org.bonitasoft.engine.search.SearchOptionsBuilder;
 
 import org.bonitasoft.log.event.BEvent;
 import org.bonitasoft.log.event.BEvent.Level;
@@ -58,6 +59,8 @@ public class Actions {
 
 	private static Logger logger = Logger.getLogger("org.bonitasoft.custompage.gasoline.groovy");
 
+	private static BEvent administratorOnly = new BEvent("org.bonitasoft.gasolinetruck", 1, Level.APPLICATIONERROR, "Administrator access", "Only an Administrator can access this function", "No access", "Ask an administrator");
+	
 	
 	 static String[]  listAttributs = [
 	                            "sql",
@@ -91,8 +94,18 @@ public class Actions {
 			APISession session = pageContext.getApiSession()
 		    ProcessAPI processAPI = TenantAPIAccessor.getProcessAPI(session);
             ProfileAPI profileAPI =   TenantAPIAccessor.getProfileAPI(session);
+			IdentityAPI identityAPI =   TenantAPIAccessor.getIdentityAPI(session);
 
-            
+            boolean isAdministrator=false;
+			List<Profile> listAllProfiles  = profileAPI.getProfilesForUser( session.getUserId(),0,10000, ProfileCriterion.ID_ASC   );
+			for (Profile profile : listAllProfiles)
+            {
+				if (profile.getName().equals("Administrator"))
+				{
+					isAdministrator=true;
+				}
+			}
+			
             def answerrows=null;
             List<BEvent> listEvents = new ArrayList<BEvent>();
             
@@ -109,160 +122,9 @@ public class Actions {
                 
             }
             
-            if ("savequery".equals(action))	{
-
-                if (jsonHash!=null) {
-                    try {
-                        BonitaProperties bonitaProperties = new BonitaProperties( pageResourceProvider );
-
-                        listEvents.addAll( bonitaProperties.load() );
-
-
-                        // replace the old id by the new one
-                        Set<String> setqueriesid = decodeListQuery( bonitaProperties.getProperty( "listqueries" ) );
-
-                        String oldId= jsonHash.get("oldId");
-                        String id= jsonHash.get("id");
-
-                        logger.info("Id["+id+"] oldId["+oldId+"] Id exist ? "+setqueriesid.contains(id)+" setqueriesid["+setqueriesid+"]");
-
-                        if (setqueriesid.contains(id) && (oldId==null || ! oldId.equals( id ) ))
-                        {
-                            // the new ID already exist
-                            listEvents.add( new BEvent("org.bonitasoft.gasoline", 4, Level.APPLICATIONERROR, "ID already exist", "This ID already exist, and you can't have 2 requests with the same ID", "The query is not saved", "Change and choose an new id"));
-                        }
-                        else
-                        {
-                            if (oldId!=null && ! oldId.equals( id ) )
-                            {
-                                // remove the oldId in the list
-                                logger.info("Id change, remove the oldid["+oldId+"] in ["+setqueriesid+"]");
-                                setqueriesid.remove(oldId );
-
-                                logger.info("new listQueriesId["+setqueriesid+"]");
-                                for (String attr : listAttributs)
-                                {
-                                    bonitaProperties.remove( oldId+"_"+attr);
-                                }
-                            }
-                            setqueriesid.add( id );
-
-                            logger.info("new listqueriesid["+setqueriesid+"]");
-
-                            for (String attr : listAttributs)
-                            {
-                                logger.info("Save attr["+attr+"] value=["+ jsonHash.get(attr)+"]");
-                                
-                                bonitaProperties.setProperty( id+"_"+attr, (jsonHash.get(attr)==null ? "" :  jsonHash.get(attr)));
-                                /*
-                                 bonitaProperties.setProperty( id+"_datasource", (jsonHash.get("datasource")==null ? "" :  jsonHash.get("datasource")) );
-                                 bonitaProperties.setProperty( id+"_expl" , ( jsonHash.get("expl") == null ? "" :  jsonHash.get("expl")));
-                                 bonitaProperties.setProperty( id+"_profilename" , ( jsonHash.get("profilename") == null ? "" :  jsonHash.get("profilename")));
-                                 bonitaProperties.setProperty( id+"_testparameters" , ( jsonHash.get("testparameters") == null ? "" :  jsonHash.get("testparameters")));
-                                 bonitaProperties.setProperty( id+"_delayms" , ( jsonHash.get("delayms") == null ? "" :  jsonHash.get("delayms")));
-                                 bonitaProperties.setProperty( id+"_simulationmode",( jsonHash.get("simulationmode") == null ? "" :  jsonHash.get("simulationmode"))); );
-                                 bonitaProperties.setProperty( id+"_simulationresult",( jsonHash.get("simulationresult") == null ? "" :  jsonHash.get("simulationresult"))); );
-                                 bonitaProperties.setProperty( id+"_simulationdelayms",( jsonHash.get("simulationdelayms") == null ? "" :  jsonHash.get("simulationdelayms"))); );
-                                 */
-                            }
-                            bonitaProperties.setProperty( "listqueries", codeListQueries( setqueriesid ));
-
-                            listEvents.addAll(  bonitaProperties.store());
-
-                            if (! BEventFactory.isError( listEvents ))
-                            {
-                                listEvents.add( new BEvent("org.bonitasoft.gasoline", 1, Level.SUCCESS, "Queries saved", "the properties is saved with success"));
-                                actionAnswer.responseMap.put("id",id );
-
-                            }
-
-                        }
-                    }
-                    catch( Exception e ) {
-                        StringWriter sw = new StringWriter();
-                        e.printStackTrace(new PrintWriter(sw));
-                        String exceptionDetails = sw.toString();
-                        logger.severe("SaveQuery:Exception "+e.toString()+" at "+exceptionDetails);
-
-                        listEvents.add( new BEvent("org.bonitasoft.ping", 2, Level.APPLICATIONERROR, "Error using BonitaProperties", "Error :"+e.toString(), "Properties is not saved", "Check exception"));
-                    }
-
-                    List<Map<String,String>> listQueries = new ArrayList<Map<String,String>>();
-                    loadQueries(  pageResourceProvider, listQueries,  listEvents);
-                    actionAnswer.responseMap.put("listqueries",listQueries );
-                }
-                else
-                    listEvents.add( new BEvent("org.bonitasoft.ping", 3, Level.APPLICATIONERROR, "JsonHash can't be decode", "the parameters in Json can't be decode", "Properties is not saved", "Check page"));
-            }
-            else  if ("loadqueries".equals(action)) {
-                try {
-                    logger.info("loadqueries");
-                    List<Map<String,String>> listQueries = new ArrayList<Map<String,String>>();
-                    loadQueries(  pageResourceProvider, listQueries,  listEvents);
-                    actionAnswer.responseMap.put("listqueries",listQueries );
-                }
-                catch( Exception e ) {
-                    StringWriter sw = new StringWriter();
-                    e.printStackTrace(new PrintWriter(sw));
-                    String exceptionDetails = sw.toString();
-                    logger.severe("LoadQuery:Exception "+e.toString()+" at "+exceptionDetails);
-
-                    listEvents.add( new BEvent("org.bonitasoft.gasolinetruck", 10, Level.APPLICATIONERROR, "Error loading queries", "Error :"+e.toString(), "Properties is not saved", "Check exception"));
-                }
-            }
-            else if ("removequery".equals(action))
-            {
-                try
-                {
-                    BonitaProperties bonitaProperties = new BonitaProperties( pageResourceProvider );
-                    listEvents.addAll( bonitaProperties.load() );
-
-
-                    // replace the old id by the new one
-                    Set<String> setqueriesid = decodeListQuery( bonitaProperties.getProperty( "listqueries" ) );
-
-                    String id= jsonHash.get("id");
-                    if (id!=null  )
-                    {
-                        // remove the oldId in the list
-                        logger.info("remove the id["+id+"] in ["+setqueriesid+"]");
-                        setqueriesid.remove(id );
-
-                        logger.info("new listQueriesId["+setqueriesid+"]");
-                        for (String attr : listAttributs)
-                        {
-                            bonitaProperties.remove( id+"_"+attr);
-                        }
-                        /*
-                         bonitaProperties.remove( id+"_sql");
-                         bonitaProperties.remove( id+"_datasource");
-                         bonitaProperties.remove( id+"_expl" );
-                         bonitaProperties.remove( id+"_profilename" );
-                         bonitaProperties.remove( id+"_testparameters" );
-                         bonitaProperties.remove( id+"_delayms" );
-                         */
-                        bonitaProperties.setProperty( "listqueries", codeListQueries( setqueriesid ));
-
-
-                        listEvents.addAll(  bonitaProperties.store());
-                    }
-
-
-                }
-                catch( Exception e ) {
-                    StringWriter sw = new StringWriter();
-                    e.printStackTrace(new PrintWriter(sw));
-                    String exceptionDetails = sw.toString();
-                    logger.severe("LoadQuery:Exception "+e.toString()+" at "+exceptionDetails);
-
-                    listEvents.add( new BEvent("org.bonitasoft.gasolinetruck", 10, Level.APPLICATIONERROR, "Error loading queries", "Error :"+e.toString(), "Properties is not saved", "Check exception"));
-                }
-                List<Map<String,String>> listQueries = new ArrayList<Map<String,String>>();
-                loadQueries(  pageResourceProvider, listQueries,  listEvents);
-                actionAnswer.responseMap.put("listqueries",listQueries );
-
-            }
-            else if ("query".equals(action) || "testquery".equals(action)) {
+			 
+			 // -------------------------- query
+			 if ("query".equals(action) || "testquery".equals(action)) {
                 // execute a query ?
             	logger.info("jsonHash=["+jsonHash+"]");
                 if (queryId == null)
@@ -300,16 +162,23 @@ public class Actions {
                 {
                     logger.info("Check if the user has the profile ["+profilename+"]");
                     boolean permission=false;
+					Set<String> setProfilesSearch = new HashSet<String>();
+					StringTokenizer st = new StringTokenizer( profilename, "," );
+					while(st.hasMoreTokens() )
+						setProfilesSearch.add( st.nextToken() );
+						
                     List<Profile>  listProfiles  = profileAPI.getProfilesForUser( session.getUserId(),0,10000, ProfileCriterion.ID_ASC   );
+					String listProfilesUser="";
                     for (Profile profile : listProfiles)
                     {
-                        if (profile.getName() .equals( profilename ))
+						listProfilesUser+= "["+profile.getName()+"], " ;
+                        if (setProfilesSearch.contains(profile.getName()))
                             permission=true;
                     }
                     if (!permission)
                     {
-                        logger.info("The user ["+session.getUserId()+"] does not have the profilename["+profilename+"]");
-                        listEvents.add( new BEvent("org.bonitasoft.gasolinetruck", 22, Level.APPLICATIONERROR, "User is not registerd in the profile", "This query is protected by a profile name, and the user is not registered inside", "Query is rejected", "Register the user in the profile (profile name is not given for security reason)"));
+                        logger.info("The user ["+session.getUserId()+"] does not have one profilename["+profilename+"], its list is "+listProfilesUser);
+                        listEvents.add( new BEvent("org.bonitasoft.gasolinetruck", 22, Level.APPLICATIONERROR, "User is not registerd in the profile", "This query is protected by a profile name, and the user is not registered inside", "Query is rejected", "Register the user in the profile (profile name is not given for security reason - attention, it's upper case dependend)"));
                         if ( ! "testquery".equals(action))
                         {
                             response.setStatus( 403 );
@@ -437,8 +306,187 @@ public class Actions {
                     
                     
                 } // end continue operation
-
+				// return the result now
+				if (answerrows != null)
+				{
+					actionAnswer.setResponse( answerrows );
+				}
+				actionAnswer.responseMap.put("listevents", BEventFactory.getHtml(listEvents) );
+				return actionAnswer;
             } // end execute a query
+			
+						 
+						 
+			// -------------------------- Administration : only administrator can arrive here
+			if (! isAdministrator)
+				listEvents.add( administratorOnly );
+		
+            else if ("savequery".equals(action)) {
+                if (jsonHash!=null) {
+                    try {
+                        BonitaProperties bonitaProperties = new BonitaProperties( pageResourceProvider );
+
+                        listEvents.addAll( bonitaProperties.load() );
+
+
+                        // replace the old id by the new one
+                        Set<String> setqueriesid = decodeListQuery( bonitaProperties.getProperty( "listqueries" ) );
+
+                        String oldId= jsonHash.get("oldId");
+                        String id= jsonHash.get("id");
+
+                        logger.info("Id["+id+"] oldId["+oldId+"] Id exist ? "+setqueriesid.contains(id)+" setqueriesid["+setqueriesid+"]");
+
+                        if (setqueriesid.contains(id) && (oldId==null || ! oldId.equals( id ) ))
+                        {
+                            // the new ID already exist
+                            listEvents.add( new BEvent("org.bonitasoft.gasoline", 4, Level.APPLICATIONERROR, "ID already exist", "This ID already exist, and you can't have 2 requests with the same ID", "The query is not saved", "Change and choose an new id"));
+                        }
+                        else
+                        {
+                            if (oldId!=null && ! oldId.equals( id ) )
+                            {
+                                // remove the oldId in the list
+                                logger.info("Id change, remove the oldid["+oldId+"] in ["+setqueriesid+"]");
+                                setqueriesid.remove(oldId );
+
+                                logger.info("new listQueriesId["+setqueriesid+"]");
+                                for (String attr : listAttributs)
+                                {
+                                    bonitaProperties.remove( oldId+"_"+attr);
+                                }
+                            }
+                            setqueriesid.add( id );
+
+                            logger.info("new listqueriesid["+setqueriesid+"]");
+
+                            for (String attr : listAttributs)
+                            {
+                                logger.info("Save attr["+attr+"] value=["+ jsonHash.get(attr)+"]");
+                                
+                                bonitaProperties.setProperty( id+"_"+attr, (jsonHash.get(attr)==null ? "" :  jsonHash.get(attr)));
+                                /*
+                                 bonitaProperties.setProperty( id+"_datasource", (jsonHash.get("datasource")==null ? "" :  jsonHash.get("datasource")) );
+                                 bonitaProperties.setProperty( id+"_expl" , ( jsonHash.get("expl") == null ? "" :  jsonHash.get("expl")));
+                                 bonitaProperties.setProperty( id+"_profilename" , ( jsonHash.get("profilename") == null ? "" :  jsonHash.get("profilename")));
+                                 bonitaProperties.setProperty( id+"_testparameters" , ( jsonHash.get("testparameters") == null ? "" :  jsonHash.get("testparameters")));
+                                 bonitaProperties.setProperty( id+"_delayms" , ( jsonHash.get("delayms") == null ? "" :  jsonHash.get("delayms")));
+                                 bonitaProperties.setProperty( id+"_simulationmode",( jsonHash.get("simulationmode") == null ? "" :  jsonHash.get("simulationmode"))); );
+                                 bonitaProperties.setProperty( id+"_simulationresult",( jsonHash.get("simulationresult") == null ? "" :  jsonHash.get("simulationresult"))); );
+                                 bonitaProperties.setProperty( id+"_simulationdelayms",( jsonHash.get("simulationdelayms") == null ? "" :  jsonHash.get("simulationdelayms"))); );
+                                 */
+                            }
+                            bonitaProperties.setProperty( "listqueries", codeListQueries( setqueriesid ));
+
+                            listEvents.addAll(  bonitaProperties.store());
+
+                            if (! BEventFactory.isError( listEvents ))
+                            {
+                                listEvents.add( new BEvent("org.bonitasoft.gasoline", 1, Level.SUCCESS, "Queries saved", "the properties is saved with success"));
+                                actionAnswer.responseMap.put("id",id );
+
+                            }
+
+                        }
+                    }
+                    catch( Exception e ) {
+                        StringWriter sw = new StringWriter();
+                        e.printStackTrace(new PrintWriter(sw));
+                        String exceptionDetails = sw.toString();
+                        logger.severe("SaveQuery:Exception "+e.toString()+" at "+exceptionDetails);
+
+                        listEvents.add( new BEvent("org.bonitasoft.ping", 2, Level.APPLICATIONERROR, "Error using BonitaProperties", "Error :"+e.toString(), "Properties is not saved", "Check exception"));
+                    }
+
+                    List<Map<String,String>> listQueries = new ArrayList<Map<String,String>>();
+                    loadQueries(  pageResourceProvider, listQueries,  listEvents);
+                    actionAnswer.responseMap.put("listqueries",listQueries );
+                }
+                else
+                    listEvents.add( new BEvent("org.bonitasoft.ping", 3, Level.APPLICATIONERROR, "JsonHash can't be decode", "the parameters in Json can't be decode", "Properties is not saved", "Check page"));
+            }
+            else  if ("loadqueries".equals(action)) {
+				try {
+					logger.info("loadqueries");
+					List<Map<String,String>> listQueries = new ArrayList<Map<String,String>>();
+					loadQueries(  pageResourceProvider, listQueries,  listEvents);
+					actionAnswer.responseMap.put("listqueries",listQueries );
+					
+					// get the list of profile 
+					List<String> listProfiles = new ArrayList<String>();
+				
+					SearchOptionsBuilder searchOptions = new SearchOptionsBuilder(0,10000);
+					SearchResult<Profile> searchProfiles = profileAPI.searchProfiles(searchOptions.done());
+                    for(Profile profile : searchProfiles.getResult())
+					{
+						listProfiles.add( profile.getName() );
+					}
+					actionAnswer.responseMap.put("listprofiles",listProfiles );
+						
+				}
+				catch( Exception e ) {
+					StringWriter sw = new StringWriter();
+					e.printStackTrace(new PrintWriter(sw));
+					String exceptionDetails = sw.toString();
+					logger.severe("LoadQuery:Exception "+e.toString()+" at "+exceptionDetails);
+
+					listEvents.add( new BEvent("org.bonitasoft.gasolinetruck", 10, Level.APPLICATIONERROR, "Error loading queries", "Error :"+e.toString(), "Properties is not saved", "Check exception"));
+				}
+				
+            }
+            else if ("removequery".equals(action))
+            {
+                try
+                {
+                    BonitaProperties bonitaProperties = new BonitaProperties( pageResourceProvider );
+                    listEvents.addAll( bonitaProperties.load() );
+
+
+                    // replace the old id by the new one
+                    Set<String> setqueriesid = decodeListQuery( bonitaProperties.getProperty( "listqueries" ) );
+
+                    String id= jsonHash.get("id");
+                    if (id!=null  )
+                    {
+                        // remove the oldId in the list
+                        logger.info("remove the id["+id+"] in ["+setqueriesid+"]");
+                        setqueriesid.remove(id );
+
+                        logger.info("new listQueriesId["+setqueriesid+"]");
+                        for (String attr : listAttributs)
+                        {
+                            bonitaProperties.remove( id+"_"+attr);
+                        }
+                        /*
+                         bonitaProperties.remove( id+"_sql");
+                         bonitaProperties.remove( id+"_datasource");
+                         bonitaProperties.remove( id+"_expl" );
+                         bonitaProperties.remove( id+"_profilename" );
+                         bonitaProperties.remove( id+"_testparameters" );
+                         bonitaProperties.remove( id+"_delayms" );
+                         */
+                        bonitaProperties.setProperty( "listqueries", codeListQueries( setqueriesid ));
+
+
+                        listEvents.addAll(  bonitaProperties.store());
+                    }
+
+
+                }
+                catch( Exception e ) {
+                    StringWriter sw = new StringWriter();
+                    e.printStackTrace(new PrintWriter(sw));
+                    String exceptionDetails = sw.toString();
+                    logger.severe("LoadQuery:Exception "+e.toString()+" at "+exceptionDetails);
+
+                    listEvents.add( new BEvent("org.bonitasoft.gasolinetruck", 10, Level.APPLICATIONERROR, "Error loading queries", "Error :"+e.toString(), "Properties is not saved", "Check exception"));
+                }
+                List<Map<String,String>> listQueries = new ArrayList<Map<String,String>>();
+                loadQueries(  pageResourceProvider, listQueries,  listEvents);
+                actionAnswer.responseMap.put("listqueries",listQueries );
+
+            }
+           
             // return the result now
             if (answerrows != null)
             {

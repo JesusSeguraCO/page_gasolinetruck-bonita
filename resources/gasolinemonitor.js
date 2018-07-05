@@ -70,10 +70,13 @@ appCommand.controller('GasolineControler',
 	this.loadQueries =function() {
 		var self=this;
 		self.loading=true;
-		$http.get( '?page=custompage_gasolinetruck&action=loadqueries' )
+		var d = new Date();
+		
+		$http.get( '?page=custompage_gasolinetruck&action=loadqueries&t='+d.getTime() )
 				.success( function ( jsonResult ) {
 						console.log("history",jsonResult);
-						self.listqueries = jsonResult.listqueries;
+						self.listqueries 	= jsonResult.listqueries;
+						self.listprofiles 	= jsonResult.listprofiles;
 						self.listevents		= jsonResult.listevents;
 						self.loading=false;
 				})
@@ -95,8 +98,9 @@ appCommand.controller('GasolineControler',
 		self.listeventssave=''; 
 		self.saving=true;
 		var json= encodeURI( angular.toJson(this.currentquery, false));
+		var d = new Date();
 		
-		$http.get( '?page=custompage_gasolinetruck&action=savequery&paramjson='+json )
+		$http.get( '?page=custompage_gasolinetruck&action=savequery&paramjson='+json+'&t='+d.getTime() )
 				.success( function ( jsonResult ) {
 						console.log("history",jsonResult);
 						self.listqueries = jsonResult.listqueries;
@@ -120,9 +124,9 @@ appCommand.controller('GasolineControler',
 		self.listeventssave=''; 
 		var json= encodeURI( angular.toJson(this.currentquery, false));
 		self.saving=true;
+		var d = new Date();	
 		
-		
-		$http.get( '?page=custompage_gasolinetruck&action=removequery&paramjson='+json )
+		$http.get( '?page=custompage_gasolinetruck&action=removequery&paramjson='+json+'&t='+d.getTime() )
 				.success( function ( jsonResult ) {
 						self.listqueries = jsonResult.listqueries;
 						self.closeDialog();
@@ -149,9 +153,10 @@ appCommand.controller('GasolineControler',
 		console.log("angular currentQuery="+angular.toJson(this.currentquery, false));
 		
 		var json= encodeURI( angular.toJson(this.currentquery, false));
-
+		var d = new Date();	
+	
 		
-		$http.get( '?page=custompage_gasolinetruck&action=testquery&paramjson='+json+'&'+this.testparameters)
+		$http.get( '?page=custompage_gasolinetruck&action=testquery&paramjson='+json+'&'+this.testparameters+'&t='+d.getTime())
 				.success( function ( jsonResult ) {
 						console.log("testquery",jsonResult);
 						self.resulttestquery = jsonResult;

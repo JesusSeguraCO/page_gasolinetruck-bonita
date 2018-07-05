@@ -48,6 +48,7 @@ public class Index implements PageController {
 
 	private static Logger loggerCustomPage= Logger.getLogger("org.bonitasoft.custompage.gasolinetruck.groovy");
 	
+	private static String pageName="GasolineTruck";
 	
 	public static class ActionAnswer
 	{
@@ -178,7 +179,13 @@ public class Index implements PageController {
 				// def String pageResource="pageResource?&page="+ request.getParameter("page")+"&location=";
 				// indexContent= indexContent.replace("@_USER_LOCALE_@", request.getParameter("locale"));
 				// indexContent= indexContent.replace("@_PAGE_RESOURCE_@", pageResource);
-				
+                
+				File pageDirectory = pageResourceProvider.getPageDirectory();
+				loggerCustomPage.info("#### "+pageName+": pageDirectory st="+pageDirectory.getAbsolutePath() );
+                  
+				indexContent= indexContent.replace("@_CURRENTTIMEMILIS_@", String.valueOf(System.currentTimeMillis()));
+				indexContent= indexContent.replace("@_PAGEDIRECTORY_@", pageDirectory.getAbsolutePath()) ;
+         
 				response.setCharacterEncoding("UTF-8");
 				response.addHeader("content-type", "text/html");
 
@@ -187,7 +194,7 @@ public class Index implements PageController {
 				out.flush();
 				out.close();
 		} catch (Exception e) {
-				e.printStackTrace();
+			loggerCustomPage.severe("#### "+pageName+".runTheBonitaIndexDoGet: Exception "+e.getMessage());				
 		}
 		}
 
