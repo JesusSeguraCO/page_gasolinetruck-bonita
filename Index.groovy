@@ -56,18 +56,24 @@ public class Index implements PageController {
 		 * if true, the answer is managed by the action (else, it should be an HTML call)
 		 */
 		public boolean isManaged=false;
+
 		/*
-		 * if true, the response is in responseMap, and a JSON is necessary
+		 * the response under a Json 
 		 */
-		public boolean isResponseMap=true;
-		/*
-		 * the response under a Map 
-		 */
-		public Map<String,Object> responseMap =new HashMap<String,Object>();
-		public void setResponse(Map<String,Object> response )
+		public Map<String,Object> responseMap = new HashMap<String,Object>();
+		
+		/** the real answer is responseJson in fact */
+		public Object responseJson=null;
+		
+		public void setResponseJson(Object response )
 		{
-			responseMap = response;
-			isResponseMap=true;
+			responseJson = response;
+		}
+		public Object getResponse()
+		{
+			if (responseJson!=null)
+				return responseJson;
+			return responseMap;
 		}
 		
 	}
@@ -86,15 +92,16 @@ public class Index implements PageController {
 				runTheBonitaIndexDoGet( request, response,pageResourceProvider,pageContext);
 				return;
 			}
-			loggerCustomPage.info("#### CustomPage:Groovy , ResponseMap="+actionAnswer.responseMap.size() );
+			loggerCustomPage.info("#### CustomPage:Groovy , responseJson="+ (actionAnswer.getResponse()==null ? "null" : "Obj ["+ actionAnswer.getResponse().getClass().getName())+"]");
 			
-			if (actionAnswer.responseMap.size()>0)
+			
+			if (actionAnswer.getResponse() !=null )
 			{
 				response.setCharacterEncoding("UTF-8");
 				response.addHeader("content-type", "application/json");
 				
 				PrintWriter out = response.getWriter()
-				String jsonSt = JSONValue.toJSONString( actionAnswer.responseMap );
+				String jsonSt = JSONValue.toJSONString( actionAnswer.getResponse() );
 				out.write( jsonSt );
 				loggerCustomPage.info("#### ##############################CustomPage: return json["+jsonSt+"]" );
 				out.flush();

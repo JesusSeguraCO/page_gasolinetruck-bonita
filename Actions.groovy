@@ -309,7 +309,7 @@ public class Actions {
 				// return the result now
 				if (answerrows != null)
 				{
-					actionAnswer.setResponse( answerrows );
+					actionAnswer.setResponseJson( answerrows );
 				}
 				actionAnswer.responseMap.put("listevents", BEventFactory.getHtml(listEvents) );
 				return actionAnswer;
