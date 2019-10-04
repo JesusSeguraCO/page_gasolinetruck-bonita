@@ -1,0 +1,48 @@
+enlever List Query legend
+
+Edit/Remove : meettre za droite + separer le remove + nom de colonne "action"
+
+List:
+
+Changer le "queryId" en Query name + i (tooltup) pour affficher la description
+Changer SlqQuery en sql
+New query en hauit (add query)
+datasource : faire reference au nom (de la blioblotheque de datasource)
+mode : afficher le mode
+
+faire un onglet "datasource" pour faire une blibliothesue de datasource (nom, url)
+
+
+dans la query
+
+   expl : description + text area
+   libelle : enlever les : et aligner top
+   TIPS: use : to set a parameters, like select * from country where age = :myage and title = :title
+		==> Use ":" to reference a parameter. i.e.: "select * from country where age = :myage"
+   
+   profile: liste deroulante + ajouts
+   enleber le remove
+
+   Ordre des champs:
+   Nom 
+   Description
+   Datasource
+   Sql
+   Profiles
+				Save / Cancel
+	
+	
+	enlever le delay / enlever le bandeau bleu (et son contenu)
+	
+	mettre le contenu de l'onglet test dans Query (en bas)
+	Crer un tableau plus sympa pour les valeurs des parametres a tester
+	
+	Onglet pour la reponse JSON / List
+	
+	changer le "mode" en "direct" / "mock" et retirer le mode "on error"
+	
+Generateur de REST API pour la securité : ainsi, si on genere la Rest API, on laisse le SQL et la datasource dans le backend
+	
+	
+	
+	
