@@ -154,9 +154,12 @@ appCommand.controller('GasolineControler',
 		
 		var json= encodeURI( angular.toJson(this.currentquery, false));
 		var d = new Date();	
-	
+		var url = '?page=custompage_gasolinetruck&action=testquery&paramjson='+json+'&t='+d.getTime();
+		if (this.testparameters)
+			url = url+'&'+this.testparameters;
+			
 		
-		$http.get( '?page=custompage_gasolinetruck&action=testquery&paramjson='+json+'&'+this.testparameters+'&t='+d.getTime())
+		$http.get( url )
 				.success( function ( jsonResult ) {
 						console.log("testquery",jsonResult);
 						self.resulttestquery = jsonResult;

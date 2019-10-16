@@ -53,7 +53,7 @@ import org.bonitasoft.log.event.BEvent;
 import org.bonitasoft.log.event.BEvent.Level;
 import org.bonitasoft.log.event.BEventFactory;
 
-import org.bonitasoft.ext.properties.BonitaProperties;
+import org.bonitasoft.properties.BonitaProperties;
 
 public class Actions {
 
@@ -553,6 +553,7 @@ public class Actions {
         params.remove("action");
         params.remove("page");
         params.remove("paramjson");
+        params.remove("t");
         return params
     }
 
