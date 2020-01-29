@@ -25,3 +25,5 @@ Then, give the parameters value in the REST CALL:
 queryid=12&countrycode=FR
 
 <img src="screenshoot_RESTCALL.jpg">
+
+For more resources and support visit www.trycore.co
